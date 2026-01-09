@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habbitet Pro - Funny Sound Edition</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+:root { --p: #6366f1; --s: #10b981; --bg: #f8fafc; --text: #1e293b; }
+body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 15px; margin: 0; }
+.container { background: white; padding: 25px; border-radius: 35px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); min-height: 95vh; animation: slideUp 0.6s ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.premium-box { background: linear-gradient(135deg, #6366f1, #a855f7); padding: 25px; border-radius: 25px; text-align: center; margin-bottom: 25px; color: white; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2); }
+.card { background: white; padding: 18px; border-radius: 22px; margin-bottom: 15px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+.day { width: 35px; height: 35px; border-radius: 10px; border: 2px solid #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; font-weight: bold; }
+.day.done { background: var(--s); color: white; border-color: var(--s); transform: scale(1.1) rotate(5deg); }
+input { background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 12px; border-radius: 12px; flex: 1; outline: none; }
+button { background: var(--p); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+.prog-bg { height: 10px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin: 12px 0; border: 1px solid #e2e8f0; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--p), var(--s)); transition: 0.8s ease; width: 0%; }
+.del { color: #fda4af; cursor: pointer; font-size: 20px; font-weight: bold; }
+.wa-btn { background: #25d366; color: white; padding: 16px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 25px; font-weight: bold; }
+#locked-features { display: none; }
+#pay-modal { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(10px); }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="premium-box">
+        <h2 style="margin:0;">ARISH PRO</h2>
+        <p style="font-size: 14px; opacity: 0.9; margin: 10px 0;">Dream 2026 Tracker</p>
+        <button id="b-btn" onclick="openPay()" style="background:white; color:var(--p); border:none; padding:10px 20px; border-radius:15px; font-weight:bold;">Upgrade for ₹15</button>
+    </div>
+
+    <h2>Daily Tasks ✅</h2>
+    <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <input type="text" id="tIn" placeholder="Aaj kya foda?">
+        <button onclick="addT()">Add</button>
+    </div>
+    <div id="tList"></div>
+
+    <div id="locked-features">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>Habits Tracker 📊</h2>
+            <button onclick="resetWeek()" style="background:#f1f5f9; color:#64748b; font-size:10px; padding:5px 10px;">Reset Week</button>
+        </div>
+        <div id="hList"></div>
+    </div>
+
+    <a href="https://wa.me/919817586922?text=Bhai%20Code%20Dedo" class="wa-btn">💬 Contact Arish for Code</a>
+</div>
+
+<div id="pay-modal">
+    <div style="background:white; padding:35px; border-radius:35px; text-align:center; width:85%; max-width:380px; box-shadow:0 30px 60px rgba(0,0,0,0.1);">
+        <h3>Unlock Pro Access</h3>
+        <img style="width:180px; border-radius:20px; margin-bottom:10px;" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=geihegdsgjdd@oksbi&pn=Arish&am=15&cu=INR">
+        <p id="jokeText"><b>Enter the Secret Code</b></p>
+        <input type="text" id="sec-code" placeholder="Yahan code dalo..." style="width:85%; margin-bottom:15px; padding:10px; border-radius:10px; border:2px solid #eee;">
+        <button onclick="unlock()" style="width:100%; background:var(--p); color:white; padding:15px; border:none; border-radius:15px; font-weight:bold;">Unlock Now</button>
+        <button onclick="closePay()" style="background:none; color:gray; margin-top:10px;">Close</button>
+    </div>
+</div>
+
+<script>
+let habits = JSON.parse(localStorage.getItem('hab_v17')) || [];
+let todos = JSON.parse(localStorage.getItem('tod_v17')) || [];
+let isPro = localStorage.getItem('pro_v17') === 'true';
+let wrongAttempts = 0;
+
+// SOUNDS
+const successSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/212/212-preview.mp3');
+
+function save() {
+    localStorage.setItem('hab_v17', JSON.stringify(habits));
+    localStorage.setItem('tod_v17', JSON.stringify(todos));
+    render();
+}
+
+function render() {
+    document.getElementById('tList').innerHTML = todos.map((t, i) => `
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+            <span onclick="toggleT(${i})" style="cursor:pointer; font-weight:600; ${t.done?'text-decoration:line-through; opacity:0.4;':''}">${t.text}</span>
+            <span onclick="todos.splice(${i},1);save()" class="del">×</span>
+        </div>`).join('');
+
+    if (isPro) {
+        document.getElementById('locked-features').style.display = 'block';
+        document.getElementById('b-btn').style.display = 'none';
+        document.getElementById('hList').innerHTML = habits.map((h, i) => {
+            let per = Math.round((h.prog.filter(d => d).length / 7) * 100);
+            return `<div class="card">
+                <div style="display:flex; justify-content:space-between;"><b>${h.name}</b><span>${per}%</span></div>
+                <div class="prog-bg"><div class="prog-fill" style="width:${per}%"></div></div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    ${h.prog.map((d, di) => `<div class="day ${d?'done':''}" onclick="toggleH(${i},${di})">${['S','M','T','W','T','F','S'][di]}</div>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
+}
+
+function addT() { let v = document.getElementById('tIn').value; if(v){todos.push({text:v, done:false}); document.getElementById('tIn').value=''; save();} }
+
+function toggleT(i) { 
+    todos[i].done = !todos[i].done; 
+    if(todos[i].done) {
+        successSound.play();
+        fireConfetti(); 
+    }
+    save(); 
+}
+
+function toggleH(i, di) { 
+    habits[i].prog[di] = !habits[i].prog[di]; 
+    if(habits[i].prog[di]) {
+        successSound.play();
+        fireConfetti(); 
+    }
+    save(); 
+}
+
+function fireConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
+
+function unlock() {
+    let inputCode = document.getElementById('sec-code').value;
+    let jokeBox = document.getElementById('jokeText');
+
+    if (inputCode === "ARISH2026") {
+        successSound.play();
+        localStorage.setItem('pro_v17', 'true');
+        isPro = true;
+        alert("Shabash! Sahi pakde hain.");
+        closePay();
+        render();
+    } else {
+        wrongAttempts++;
+        errorSound.play(); // Error Sound Play
+        if (wrongAttempts === 1) {
+            jokeBox.innerHTML = "<b style='color:red;'>Galti se mistake? Galat code hai!</b>";
+        } else if (wrongAttempts === 2) {
+            jokeBox.innerHTML = "<b style='color:red;'>Bhai, dekh ke dalo... galat hai! 😒</b>";
+        } else if (wrongAttempts === 3) {
+            jokeBox.innerHTML = "<b style='color:red;'>Are bhai bola na galat hai code! Dimag mat khao. 😤</b>";
+        } else if (wrongAttempts >= 4) {
+            jokeBox.innerHTML = "<b style='color:red;'>Bhai tu rehne de, tujhse na ho payega. WhatsApp kar le! 😂</b>";
+            document.getElementById('sec-code').value = "";
+        }
+    }
+}
+
+function resetWeek() { habits.forEach(h => h.prog = Array(7).fill(false)); save(); }
+function openPay() { document.getElementById('pay-modal').style.display = 'flex'; }
+function closePay() { document.getElementById('pay-modal').style.display = 'none'; }
+render();
+</script>
+</body>
+</html>
