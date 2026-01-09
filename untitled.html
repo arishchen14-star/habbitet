@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARISH PRO - Final Master</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --p: #7c3aed; --s: #2563eb; --bg: #f5f3ff; --text: #1e1b4b; }
+body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 15px; margin: 0; overflow-x: hidden; }
+
+/* WELCOME PAGE */
+#welcome-page {
+    position: fixed; inset: 0; background: white; z-index: 2000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 30px; transition: 0.5s ease;
+}
+.welcome-card { max-width: 400px; animation: fadeIn 0.8s ease; }
+.start-btn { 
+    background: linear-gradient(135deg, var(--p), var(--s)); 
+    color: white; border: none; padding: 18px 40px; border-radius: 20px; 
+    font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+}
+
+/* MAIN APP */
+.container { background: white; padding: 25px; border-radius: 35px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.1); min-height: 95vh; animation: slideUp 0.6s ease; display: none; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+.premium-box { background: linear-gradient(135deg, #7c3aed, #2563eb); padding: 25px; border-radius: 25px; text-align: center; margin-bottom: 25px; color: white; }
+.total-stats { background: #ede9fe; padding: 15px; border-radius: 20px; margin-bottom: 20px; text-align: center; border: 1px solid #ddd6fe; }
+.card { background: white; padding: 18px; border-radius: 22px; margin-bottom: 15px; border: 1px solid #e0e7ff; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+.day { width: 35px; height: 35px; border-radius: 10px; border: 2px solid #e0e7ff; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+.day.done { background: var(--p); color: white; border-color: var(--p); }
+
+/* INPUTS FIX */
+input { background: #fdfcff; border: 1.5px solid #ddd6fe; padding: 12px; border-radius: 12px; outline: none; font-family: inherit; font-size: 14px; }
+input[type="date"] { padding: 10px; max-width: 130px; color: var(--p); font-weight: bold; } /* Date Picker Fixed */
+
+button { background: var(--p); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s; }
+.prog-bg { height: 10px; background: #e0e7ff; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--p), var(--s)); transition: 0.8s ease; width: 0%; }
+.del { color: #f87171; cursor: pointer; font-size: 20px; font-weight: bold; padding: 5px; }
+
+#pay-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(10px); }
+.modal-content { background:white; padding:30px; border-radius:35px; text-align:center; width:85%; max-width:380px; }
+.qr-img { width: 100%; max-width: 180px; border-radius: 20px; margin: 15px 0; border: 5px solid #f5f3ff; }
+</style>
+</head>
+<body>
+
+<div id="welcome-page">
+    <div class="welcome-card">
+        <div style="font-size:80px">🚀</div>
+        <h1>Welcome to <br><span style="color:var(--p)">ARISH PRO</span></h1>
+        <p style="color:gray; margin-bottom:30px;">Crush your 2026 goals with the ultimate master habit tracker.</p>
+        <button class="start-btn" onclick="startApp()">Get Started</button>
+    </div>
+</div>
+
+<div class="container" id="main-app">
+    <div class="premium-box">
+        <h2 style="margin:0;">ARISH PRO</h2>
+        <p style="font-size: 14px; opacity: 0.9;">Dream 2026 Strategy</p>
+        <button id="b-btn" onclick="openPay()" style="background:white; color:var(--p); padding:10px 20px; border-radius:15px; font-weight:bold; margin-top:10px;">Upgrade Pro (₹15)</button>
+    </div>
+
+    <div class="total-stats">
+        <h3 style="margin:0; font-size: 15px;">Day Score: <span id="totalPer">0%</span> 🔥</h3>
+        <div class="prog-bg" style="height: 12px;"><div id="totalFill" class="prog-fill"></div></div>
+    </div>
+
+    <h2>Daily Tasks ✅</h2>
+    <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <input type="text" id="tIn" placeholder="Aaj kya foda?" style="flex:1;">
+        <button onclick="addT()">Add</button>
+    </div>
+    <div id="tList"></div>
+
+    <div id="locked-features" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <h2>Weekly Habits 📊</h2>
+            <button onclick="resetWeek()" style="background:#ede9fe; color:#6d28d9; font-size:10px; padding:5px 10px; border-radius:8px; border:none;">Reset Week</button>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input type="text" id="hIn" placeholder="New habit..." style="flex:1;">
+            <button onclick="addH()">Add</button>
+        </div>
+        <div id="hList"></div>
+
+        <h2>Upcoming Events 📅</h2>
+        <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap: nowrap; align-items: center;">
+            <input type="text" id="eIn" placeholder="Event name..." style="flex: 1; min-width: 0;">
+            <input type="date" id="eDate">
+            <button onclick="addE()">Add</button>
+        </div>
+        <div id="eList"></div>
+    </div>
+
+    <a href="https://wa.me/919817586922?text=Bhai%20Payment%20Done%20Code%20Dedo" style="display:block; text-align:center; margin-top:30px; color:var(--p); font-weight:bold; text-decoration:none;">💬 Contact Arish for Code</a>
+</div>
+
+<div id="pay-modal">
+    <div class="modal-content">
+        <h3>Unlock Pro Access</h3>
+        <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=geihegdsgjdd@oksbi&pn=Arish&am=15&cu=INR">
+        <p id="jokeText"><b>Enter Secret Code</b></p>
+        <input type="text" id="sec-code" placeholder="Code..." style="width:85%; margin-bottom:15px; padding:10px; border-radius:12px; border:2px solid #ddd6fe; text-align:center;">
+        <button onclick="unlock()" style="width:100%; padding:15px; border-radius:15px; margin-bottom:10px;">Verify & Unlock</button>
+        <button onclick="closePay()" style="background:none; color:gray; border:none; cursor:pointer;">Close</button>
+    </div>
+</div>
+
+<script>
+const VER = 'v25'; 
+let habits = JSON.parse(localStorage.getItem('hab_'+VER)) || [];
+let todos = JSON.parse(localStorage.getItem('tod_'+VER)) || [];
+let events = JSON.parse(localStorage.getItem('eve_'+VER)) || [];
+let isPro = localStorage.getItem('pro_'+VER) === 'true';
+let wrongAttempts = 0;
+
+const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/212/212-preview.mp3');
+
+window.onload = () => {
+    if (localStorage.getItem('newUser_'+VER) === 'false') {
+        document.getElementById('welcome-page').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+    }
+    render();
+};
+
+function startApp() {
+    localStorage.setItem('newUser_'+VER, 'false');
+    document.getElementById('welcome-page').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('welcome-page').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        confetti({ particleCount: 150, spread: 100 });
+    }, 500);
+}
+
+function save() {
+    localStorage.setItem('hab_'+VER, JSON.stringify(habits));
+    localStorage.setItem('tod_'+VER, JSON.stringify(todos));
+    localStorage.setItem('eve_'+VER, JSON.stringify(events));
+    render();
+}
+
+function render() {
+    document.getElementById('tList').innerHTML = todos.map((t, i) => `
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+            <span onclick="toggleT(${i})" style="cursor:pointer; font-weight:600; ${t.done?'text-decoration:line-through; opacity:0.4;':''}">${t.text}</span>
+            <span onclick="todos.splice(${i},1);save()" class="del">×</span>
+        </div>`).join('');
+
+    if (isPro) {
+        document.getElementById('locked-features').style.display = 'block';
+        document.getElementById('b-btn').style.display = 'none';
+        document.getElementById('hList').innerHTML = habits.map((h, i) => {
+            let per = Math.round((h.prog.filter(d => d).length / 7) * 100);
+            return `<div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b onclick="editH(${i})" style="cursor:pointer;">${h.name} ✏️</b>
+                    <span onclick="habits.splice(${i},1);save()" class="del">×</span>
+                </div>
+                <div class="prog-bg"><div class="prog-fill" style="width:${per}%"></div></div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    ${h.prog.map((d, di) => `<div class="day ${d?'done':''}" onclick="toggleH(${i},${di})">${['S','M','T','W','T','F','S'][di]}</div>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+        document.getElementById('eList').innerHTML = events.map((e, i) => `
+            <div class="card" style="border-left:5px solid #2563eb; display:flex; justify-content:space-between; align-items:center;">
+                <span><b>${e.date.split('-').reverse().join('/')}:</b> ${e.name}</span>
+                <span onclick="events.splice(${i},1);save()" class="del">×</span>
+            </div>`).join('');
+    }
+
+    let items = todos.length + (isPro ? habits.length : 0);
+    let done = todos.filter(t => t.done).length;
+    if(isPro) habits.forEach(h => { if(h.prog[new Date().getDay()]) done++; });
+    let per = items > 0 ? Math.round((done / items) * 100) : 0;
+    document.getElementById('totalPer').innerText = per + "%";
+    document.getElementById('totalFill').style.width = per + "%";
+}
+
+function addT() { let v = document.getElementById('tIn').value; if(v){todos.push({text:v, done:false}); document.getElementById('tIn').value=''; save();} }
+function addH() { let v = document.getElementById('hIn').value; if(v){habits.push({name:v, prog:Array(7).fill(false)}); document.getElementById('hIn').value=''; save();} }
+function addE() { let n = document.getElementById('eIn').value, d = document.getElementById('eDate').value; if(n&&d){events.push({name:n, date:d}); document.getElementById('eIn').value=''; document.getElementById('eDate').value=''; save();} }
+
+function toggleT(i) { todos[i].done = !todos[i].done; if(todos[i].done) confetti({particleCount:50}); save(); }
+function toggleH(i, di) { habits[i].prog[di] = !habits[i].prog[di]; if(habits[i].prog[di]) confetti({particleCount:30}); save(); }
+function editH(i) { let n = prompt("Edit Name:", habits[i].name); if(n){habits[i].name = n; save();} }
+
+function unlock() {
+    let inputCode = document.getElementById('sec-code').value.toUpperCase();
+    let jokeBox = document.getElementById('jokeText');
+    if (inputCode === "ARISH2026") {
+        localStorage.setItem('pro_'+VER, 'true'); isPro = true; closePay(); render(); confetti();
+    } else {
+        wrongAttempts++; errorSound.play();
+        if (wrongAttempts === 1) jokeBox.innerHTML = "<b style='color:red;'>Galti se mistake? Galat code hai!</b>";
+        else if (wrongAttempts === 2) jokeBox.innerHTML = "<b style='color:red;'>Bhai dekh ke dalo! 😒</b>";
+        else jokeBox.innerHTML = "<b style='color:red;'>Bhai tu rehne de, WhatsApp kar le! 😂</b>";
+    }
+}
+
+function resetWeek() { if(confirm("Reset Week?")) { habits.forEach(h => h.prog = Array(7).fill(false)); save(); } }
+function openPay() { document.getElementById('pay-modal').style.display = 'flex'; }
+function closePay() { document.getElementById('pay-modal').style.display = 'none'; }
+</script>
+</body>
+</html>
